@@ -9,6 +9,7 @@ interface TFSectionProps {
   showFeedback: boolean;
   bookmarkedIds: Set<string>;
   onToggleBookmark: (id: string) => void;
+  isExamSubmitted?: boolean;
 }
 
 export const TFSection: React.FC<TFSectionProps> = ({
@@ -18,6 +19,7 @@ export const TFSection: React.FC<TFSectionProps> = ({
   showFeedback,
   bookmarkedIds,
   onToggleBookmark,
+  isExamSubmitted = false,
 }) => {
   return (
     <div className="space-y-4">
@@ -30,7 +32,7 @@ export const TFSection: React.FC<TFSectionProps> = ({
             </span>
           </h2>
           <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-            Mark whether each statement is True (T) or False (F). Instant feedback is enabled in Practice Mode.
+            Mark whether each statement is True (T) or False (F). In Practice Mode, feedback appears as soon as you make a choice.
           </p>
         </div>
       </div>
@@ -45,6 +47,7 @@ export const TFSection: React.FC<TFSectionProps> = ({
           return (
             <div
               key={q.id}
+              id={q.id}
               className={`p-4 sm:p-5 rounded-2xl border transition-all duration-200 ${
                 showFeedback && hasAnswered
                   ? isCorrect
@@ -87,19 +90,22 @@ export const TFSection: React.FC<TFSectionProps> = ({
 
               {/* True / False Buttons */}
               <div className="grid grid-cols-2 gap-3 max-w-xs">
+                {/* True Button */}
                 <button
                   type="button"
-                  disabled={showFeedback}
+                  disabled={isExamSubmitted}
                   onClick={() => onSelectAnswer(q.id, true)}
                   className={`py-2 px-4 rounded-xl text-xs sm:text-sm font-bold border transition-all flex items-center justify-center gap-2 ${
-                    selected === true
-                      ? showFeedback
-                        ? q.correctAnswer === true
+                    showFeedback && hasAnswered
+                      ? selected === true
+                        ? isCorrect
                           ? 'bg-emerald-600 border-emerald-600 text-white shadow-sm'
                           : 'bg-rose-600 border-rose-600 text-white shadow-sm'
-                        : 'bg-emerald-600 border-emerald-600 text-white shadow-sm'
-                      : showFeedback && q.correctAnswer === true
-                        ? 'bg-emerald-50 dark:bg-emerald-950/40 border-emerald-400 text-emerald-700 dark:text-emerald-300 ring-2 ring-emerald-500/20'
+                        : q.correctAnswer === true
+                          ? 'bg-emerald-50 dark:bg-emerald-950/40 border-emerald-400 text-emerald-700 dark:text-emerald-300 ring-2 ring-emerald-500/20'
+                          : 'bg-slate-50 dark:bg-slate-800/80 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 opacity-60'
+                      : selected === true
+                        ? 'bg-emerald-600 border-emerald-600 text-white shadow-sm'
                         : 'bg-slate-50 dark:bg-slate-800/80 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
                   }`}
                 >
@@ -107,21 +113,27 @@ export const TFSection: React.FC<TFSectionProps> = ({
                   {showFeedback && hasAnswered && selected === true && (
                     isCorrect ? <CheckCircle2 className="w-4 h-4 text-white" /> : <XCircle className="w-4 h-4 text-white" />
                   )}
+                  {showFeedback && hasAnswered && selected === false && q.correctAnswer === true && (
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                  )}
                 </button>
 
+                {/* False Button */}
                 <button
                   type="button"
-                  disabled={showFeedback}
+                  disabled={isExamSubmitted}
                   onClick={() => onSelectAnswer(q.id, false)}
                   className={`py-2 px-4 rounded-xl text-xs sm:text-sm font-bold border transition-all flex items-center justify-center gap-2 ${
-                    selected === false
-                      ? showFeedback
-                        ? q.correctAnswer === false
+                    showFeedback && hasAnswered
+                      ? selected === false
+                        ? isCorrect
                           ? 'bg-emerald-600 border-emerald-600 text-white shadow-sm'
                           : 'bg-rose-600 border-rose-600 text-white shadow-sm'
-                        : 'bg-emerald-600 border-emerald-600 text-white shadow-sm'
-                      : showFeedback && q.correctAnswer === false
-                        ? 'bg-emerald-50 dark:bg-emerald-950/40 border-emerald-400 text-emerald-700 dark:text-emerald-300 ring-2 ring-emerald-500/20'
+                        : q.correctAnswer === false
+                          ? 'bg-emerald-50 dark:bg-emerald-950/40 border-emerald-400 text-emerald-700 dark:text-emerald-300 ring-2 ring-emerald-500/20'
+                          : 'bg-slate-50 dark:bg-slate-800/80 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 opacity-60'
+                      : selected === false
+                        ? 'bg-emerald-600 border-emerald-600 text-white shadow-sm'
                         : 'bg-slate-50 dark:bg-slate-800/80 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
                   }`}
                 >
@@ -129,12 +141,15 @@ export const TFSection: React.FC<TFSectionProps> = ({
                   {showFeedback && hasAnswered && selected === false && (
                     isCorrect ? <CheckCircle2 className="w-4 h-4 text-white" /> : <XCircle className="w-4 h-4 text-white" />
                   )}
+                  {showFeedback && hasAnswered && selected === true && q.correctAnswer === false && (
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                  )}
                 </button>
               </div>
 
-              {/* Feedback & Lecture Citation Box */}
-              {showFeedback && (hasAnswered || true) && (
-                <div className="mt-4 pt-3 border-t border-slate-100 dark:border-slate-800/80 space-y-2 text-xs">
+              {/* Feedback & Citation Box (Only shown once answered) */}
+              {showFeedback && hasAnswered && (
+                <div className="mt-4 pt-3 border-t border-slate-100 dark:border-slate-800/80 space-y-2 text-xs animate-in fade-in duration-200">
                   <div className="flex items-start gap-2 text-slate-700 dark:text-slate-300">
                     <Lightbulb className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
                     <div>

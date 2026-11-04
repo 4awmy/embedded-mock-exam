@@ -9,6 +9,7 @@ interface MCQSectionProps {
   showFeedback: boolean;
   bookmarkedIds: Set<string>;
   onToggleBookmark: (id: string) => void;
+  isExamSubmitted?: boolean;
 }
 
 export const MCQSection: React.FC<MCQSectionProps> = ({
@@ -18,6 +19,7 @@ export const MCQSection: React.FC<MCQSectionProps> = ({
   showFeedback,
   bookmarkedIds,
   onToggleBookmark,
+  isExamSubmitted = false,
 }) => {
   return (
     <div className="space-y-4">
@@ -30,7 +32,7 @@ export const MCQSection: React.FC<MCQSectionProps> = ({
             </span>
           </h2>
           <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-            Select the most accurate option (A, B, C or D). Full pedagogical explanations appear in Practice Mode.
+            Select the best answer (A, B, C or D). In Practice Mode, feedback and explanations appear as soon as you choose an option.
           </p>
         </div>
       </div>
@@ -45,6 +47,7 @@ export const MCQSection: React.FC<MCQSectionProps> = ({
           return (
             <div
               key={q.id}
+              id={q.id}
               className={`p-4 sm:p-5 rounded-2xl border transition-all duration-200 ${
                 showFeedback && hasAnswered
                   ? isCorrect
@@ -93,38 +96,40 @@ export const MCQSection: React.FC<MCQSectionProps> = ({
 
                   let optionStyle = 'bg-slate-50 dark:bg-slate-800/80 border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800';
 
-                  if (showFeedback) {
+                  if (showFeedback && hasAnswered) {
                     if (isThisCorrect) {
-                      optionStyle = 'bg-emerald-50 dark:bg-emerald-950/40 border-emerald-500 text-emerald-900 dark:text-emerald-200 font-semibold ring-1 ring-emerald-500';
+                      optionStyle = 'bg-emerald-50 dark:bg-emerald-950/40 border-emerald-500 text-emerald-900 dark:text-emerald-200 font-bold ring-1 ring-emerald-500';
                     } else if (isSelected && !isThisCorrect) {
-                      optionStyle = 'bg-rose-50 dark:bg-rose-950/40 border-rose-400 text-rose-900 dark:text-rose-200 line-through';
+                      optionStyle = 'bg-rose-50 dark:bg-rose-950/40 border-rose-400 text-rose-900 dark:text-rose-200 font-bold';
                     }
                   } else if (isSelected) {
-                    optionStyle = 'bg-emerald-600 border-emerald-600 text-white shadow-sm';
+                    optionStyle = 'bg-emerald-600 border-emerald-600 text-white font-bold shadow-sm';
                   }
 
                   return (
                     <button
                       key={opt.key}
                       type="button"
-                      disabled={showFeedback}
+                      disabled={isExamSubmitted}
                       onClick={() => onSelectOption(q.id, opt.key)}
                       className={`w-full text-left p-3 rounded-xl border text-xs sm:text-sm transition-all flex items-start gap-3 ${optionStyle}`}
                     >
                       <span className={`w-6 h-6 rounded-lg font-bold text-xs flex items-center justify-center shrink-0 ${
-                        isSelected && !showFeedback
+                        isSelected && (!showFeedback || !hasAnswered)
                           ? 'bg-white/20 text-white'
-                          : showFeedback && isThisCorrect
+                          : showFeedback && hasAnswered && isThisCorrect
                             ? 'bg-emerald-600 text-white'
-                            : 'bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300'
+                            : showFeedback && hasAnswered && isSelected && !isThisCorrect
+                              ? 'bg-rose-600 text-white'
+                              : 'bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300'
                       }`}>
                         {opt.key}
                       </span>
                       <span className="flex-1 mt-0.5 leading-normal">{opt.text}</span>
-                      {showFeedback && isThisCorrect && (
+                      {showFeedback && hasAnswered && isThisCorrect && (
                         <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
                       )}
-                      {showFeedback && isSelected && !isThisCorrect && (
+                      {showFeedback && hasAnswered && isSelected && !isThisCorrect && (
                         <XCircle className="w-4 h-4 text-rose-600 dark:text-rose-400 shrink-0 mt-0.5" />
                       )}
                     </button>
@@ -132,9 +137,9 @@ export const MCQSection: React.FC<MCQSectionProps> = ({
                 })}
               </div>
 
-              {/* Feedback & Citation Box */}
-              {showFeedback && (hasAnswered || true) && (
-                <div className="mt-4 pt-3 border-t border-slate-100 dark:border-slate-800/80 space-y-2 text-xs">
+              {/* Feedback & Citation Box (Only shown once answered) */}
+              {showFeedback && hasAnswered && (
+                <div className="mt-4 pt-3 border-t border-slate-100 dark:border-slate-800/80 space-y-2 text-xs animate-in fade-in duration-200">
                   <div className="flex items-start gap-2 text-slate-700 dark:text-slate-300">
                     <Lightbulb className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
                     <div>

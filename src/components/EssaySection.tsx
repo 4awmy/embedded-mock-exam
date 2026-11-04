@@ -9,6 +9,7 @@ interface EssaySectionProps {
   essayScores: Record<string, number>;
   onUpdateScore: (id: string, score: number) => void;
   showFeedback: boolean;
+  isExamSubmitted?: boolean;
 }
 
 export const EssaySection: React.FC<EssaySectionProps> = ({
@@ -17,7 +18,8 @@ export const EssaySection: React.FC<EssaySectionProps> = ({
   onUpdateAnswer,
   essayScores,
   onUpdateScore,
-  showFeedback,
+  showFeedback: _showFeedback,
+  isExamSubmitted: _isExamSubmitted = false,
 }) => {
   const [expandedSolutions, setExpandedSolutions] = useState<Record<string, boolean>>({});
 
@@ -36,7 +38,7 @@ export const EssaySection: React.FC<EssaySectionProps> = ({
             </span>
           </h2>
           <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-            Answer thoroughly. You can grade your solution against the official model answer and evaluation rubric.
+            Formulate your response below. Once answered, toggle the official model answer and grading rubric to self-evaluate your solution.
           </p>
         </div>
       </div>
@@ -45,11 +47,13 @@ export const EssaySection: React.FC<EssaySectionProps> = ({
         {questions.map((q) => {
           const currentAnswer = userAnswers[q.id] || '';
           const currentScore = essayScores[q.id] ?? 0;
-          const isExpanded = expandedSolutions[q.id] || showFeedback;
+          const isExpanded = !!expandedSolutions[q.id];
+          const hasWritten = currentAnswer.trim().length > 0;
 
           return (
             <div
               key={q.id}
+              id={q.id}
               className="p-5 sm:p-6 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm"
             >
               <div className="flex items-start justify-between gap-3 mb-3">
@@ -77,9 +81,16 @@ export const EssaySection: React.FC<EssaySectionProps> = ({
 
               {/* Student answer area */}
               <div className="space-y-2 mb-4">
-                <label className="text-xs font-semibold text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
-                  <PenLine className="w-3.5 h-3.5 text-emerald-600" />
-                  <span>Your Written Response:</span>
+                <label className="text-xs font-semibold text-slate-500 dark:text-slate-400 flex items-center justify-between">
+                  <span className="flex items-center gap-1.5">
+                    <PenLine className="w-3.5 h-3.5 text-emerald-600" />
+                    <span>Your Written Response:</span>
+                  </span>
+                  {hasWritten && (
+                    <span className="text-[11px] text-emerald-600 dark:text-emerald-400 font-medium">
+                      ✓ Response saved
+                    </span>
+                  )}
                 </label>
                 <textarea
                   value={currentAnswer}
@@ -92,15 +103,23 @@ export const EssaySection: React.FC<EssaySectionProps> = ({
 
               {/* Toggle Model Answer */}
               <div className="pt-2 border-t border-slate-100 dark:border-slate-800/80">
-                <button
-                  type="button"
-                  onClick={() => toggleSolution(q.id)}
-                  className="text-xs font-bold text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 dark:hover:text-emerald-300 flex items-center gap-1.5 transition-colors"
-                >
-                  <BookOpen className="w-4 h-4" />
-                  <span>{isExpanded ? 'Hide Model Answer & Rubric' : 'Show Official Model Answer & Rubric'}</span>
-                  {isExpanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
-                </button>
+                <div className="flex items-center justify-between flex-wrap gap-2">
+                  <button
+                    type="button"
+                    onClick={() => toggleSolution(q.id)}
+                    className="text-xs font-bold text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 dark:hover:text-emerald-300 flex items-center gap-1.5 transition-colors py-1.5 px-3 rounded-lg bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800/60"
+                  >
+                    <BookOpen className="w-4 h-4" />
+                    <span>{isExpanded ? 'Hide Official Model Answer & Rubric' : 'Reveal Official Model Answer & Rubric'}</span>
+                    {isExpanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+                  </button>
+
+                  {hasWritten && !isExpanded && (
+                    <span className="text-[11px] text-slate-500 italic">
+                      Click reveal to compare your written response with the professor's solution.
+                    </span>
+                  )}
+                </div>
 
                 {isExpanded && (
                   <div className="mt-4 space-y-4 text-xs animate-in fade-in duration-200">

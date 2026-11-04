@@ -23,7 +23,8 @@ import {
   FileText,
   Bookmark,
   Sparkles,
-  ChevronRight
+  ChevronRight,
+  Layers
 } from 'lucide-react';
 
 interface SheetProgress {
@@ -76,9 +77,9 @@ export function App() {
   const [selectedSheetId, setSelectedSheetId] = useState<string>('comprehensive');
   const currentBundle: SheetBundle = AVAILABLE_SHEETS.find(s => s.id === selectedSheetId) || AVAILABLE_SHEETS[0];
 
-  // Navigation state
+  // Navigation state - Default to 'mcq' so MCQ questions are front-and-center!
   const [activeTab, setActiveTab] = useState<'exam' | 'practice' | 'reference' | 'scoreboard'>('exam');
-  const [activeExamSection, setActiveExamSection] = useState<'tf' | 'mcq' | 'essay'>('tf');
+  const [activeExamSection, setActiveExamSection] = useState<'all' | 'mcq' | 'essay' | 'tf'>('mcq');
 
   // Multi-sheet progress state map
   const [progressMap, setProgressMap] = useState<Record<string, SheetProgress>>(() => {
@@ -362,24 +363,12 @@ export function App() {
                 <p className="text-xs text-slate-600 dark:text-slate-300 mt-0.5">
                   {activeTab === 'exam'
                     ? `Simulating official AAST examination conditions (${currentBundle.metadata.timeLimitMinutes} min countdown). Submit when completed.`
-                    : 'Instant feedback is active! See official lecture citations, quotes, and full explanations immediately upon selecting answers.'}
+                    : 'Practice Mode is active. Questions remain untinted until you make your selection, after which instant explanations and model answers will appear!'}
                 </p>
               </div>
 
-              {/* Section Segment Tabs: TF / MCQ / Essay */}
+              {/* Section Segment Tabs: MCQ / Essay / TF / All */}
               <div className="flex items-center gap-1 p-1 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm text-xs">
-                <button
-                  type="button"
-                  onClick={() => setActiveExamSection('tf')}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-bold transition-all ${
-                    activeExamSection === 'tf'
-                      ? 'bg-emerald-600 text-white shadow-sm'
-                      : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
-                  }`}
-                >
-                  <CheckCircle2 className="w-3.5 h-3.5" />
-                  <span>Part I: T/F ({currentBundle.tf.length})</span>
-                </button>
                 <button
                   type="button"
                   onClick={() => setActiveExamSection('mcq')}
@@ -390,7 +379,7 @@ export function App() {
                   }`}
                 >
                   <HelpCircle className="w-3.5 h-3.5" />
-                  <span>Part II: MCQ ({currentBundle.mcq.length})</span>
+                  <span>MCQ ({currentBundle.mcq.length})</span>
                 </button>
                 <button
                   type="button"
@@ -402,7 +391,31 @@ export function App() {
                   }`}
                 >
                   <FileText className="w-3.5 h-3.5" />
-                  <span>Part III: Essay/Design ({currentBundle.essay.length})</span>
+                  <span>Essay & Design ({currentBundle.essay.length})</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setActiveExamSection('tf')}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-bold transition-all ${
+                    activeExamSection === 'tf'
+                      ? 'bg-emerald-600 text-white shadow-sm'
+                      : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
+                  }`}
+                >
+                  <CheckCircle2 className="w-3.5 h-3.5" />
+                  <span>True / False ({currentBundle.tf.length})</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setActiveExamSection('all')}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-bold transition-all ${
+                    activeExamSection === 'all'
+                      ? 'bg-emerald-600 text-white shadow-sm'
+                      : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
+                  }`}
+                >
+                  <Layers className="w-3.5 h-3.5" />
+                  <span>All Sections</span>
                 </button>
               </div>
             </div>
@@ -427,92 +440,96 @@ export function App() {
               </div>
 
               <div className="flex items-center gap-1.5 flex-wrap">
-                {activeExamSection === 'tf' && currentBundle.tf.map((q) => {
-                  const isAnswered = currentProgress.tf[q.id] !== undefined;
-                  const isBookmarked = currentProgress.bookmarks.has(q.id);
-                  return (
-                    <button
-                      key={q.id}
-                      type="button"
-                      onClick={() => {
-                        const el = document.getElementById(q.id);
-                        if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                      }}
-                      className={`w-7 h-7 rounded-lg text-xs font-bold transition-all relative flex items-center justify-center ${
-                        isAnswered
-                          ? 'bg-emerald-600 text-white'
-                          : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700'
-                      }`}
-                    >
-                      {q.num}
-                      {isBookmarked && (
-                        <span className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-amber-500 ring-2 ring-white dark:ring-slate-900" />
-                      )}
-                    </button>
-                  );
-                })}
+                {(activeExamSection === 'mcq' || activeExamSection === 'all') && (
+                  <div className="flex items-center gap-1 flex-wrap">
+                    <span className="text-[10px] font-bold uppercase text-slate-400 mr-1">MCQ:</span>
+                    {currentBundle.mcq.map((q) => {
+                      const isAnswered = currentProgress.mcq[q.id] !== undefined;
+                      const isBookmarked = currentProgress.bookmarks.has(q.id);
+                      return (
+                        <button
+                          key={q.id}
+                          type="button"
+                          onClick={() => {
+                            const el = document.getElementById(q.id);
+                            if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                          }}
+                          className={`w-7 h-7 rounded-lg text-xs font-bold transition-all relative flex items-center justify-center ${
+                            isAnswered
+                              ? 'bg-emerald-600 text-white'
+                              : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700'
+                          }`}
+                        >
+                          {q.num}
+                          {isBookmarked && (
+                            <span className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-amber-500 ring-2 ring-white dark:ring-slate-900" />
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
 
-                {activeExamSection === 'mcq' && currentBundle.mcq.map((q) => {
-                  const isAnswered = currentProgress.mcq[q.id] !== undefined;
-                  const isBookmarked = currentProgress.bookmarks.has(q.id);
-                  return (
-                    <button
-                      key={q.id}
-                      type="button"
-                      onClick={() => {
-                        const el = document.getElementById(q.id);
-                        if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                      }}
-                      className={`w-7 h-7 rounded-lg text-xs font-bold transition-all relative flex items-center justify-center ${
-                        isAnswered
-                          ? 'bg-emerald-600 text-white'
-                          : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700'
-                      }`}
-                    >
-                      {q.num}
-                      {isBookmarked && (
-                        <span className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-amber-500 ring-2 ring-white dark:ring-slate-900" />
-                      )}
-                    </button>
-                  );
-                })}
+                {(activeExamSection === 'essay' || activeExamSection === 'all') && (
+                  <div className="flex items-center gap-1 flex-wrap">
+                    <span className="text-[10px] font-bold uppercase text-slate-400 mx-1">Essay:</span>
+                    {currentBundle.essay.map((q) => {
+                      const isAnswered = (currentProgress.essay[q.id] && currentProgress.essay[q.id].trim().length > 0) || currentProgress.essayScores[q.id] !== undefined;
+                      return (
+                        <button
+                          key={q.id}
+                          type="button"
+                          onClick={() => {
+                            const el = document.getElementById(q.id);
+                            if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                          }}
+                          className={`w-7 h-7 rounded-lg text-xs font-bold transition-all flex items-center justify-center ${
+                            isAnswered
+                              ? 'bg-emerald-600 text-white'
+                              : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700'
+                          }`}
+                        >
+                          Q{q.num}
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
 
-                {activeExamSection === 'essay' && currentBundle.essay.map((q) => {
-                  const isAnswered = (currentProgress.essay[q.id] && currentProgress.essay[q.id].trim().length > 0) || currentProgress.essayScores[q.id] !== undefined;
-                  return (
-                    <button
-                      key={q.id}
-                      type="button"
-                      onClick={() => {
-                        const el = document.getElementById(q.id);
-                        if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                      }}
-                      className={`w-7 h-7 rounded-lg text-xs font-bold transition-all flex items-center justify-center ${
-                        isAnswered
-                          ? 'bg-emerald-600 text-white'
-                          : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700'
-                      }`}
-                    >
-                      Q{q.num}
-                    </button>
-                  );
-                })}
+                {(activeExamSection === 'tf' || activeExamSection === 'all') && (
+                  <div className="flex items-center gap-1 flex-wrap">
+                    <span className="text-[10px] font-bold uppercase text-slate-400 mx-1">T/F:</span>
+                    {currentBundle.tf.map((q) => {
+                      const isAnswered = currentProgress.tf[q.id] !== undefined;
+                      const isBookmarked = currentProgress.bookmarks.has(q.id);
+                      return (
+                        <button
+                          key={q.id}
+                          type="button"
+                          onClick={() => {
+                            const el = document.getElementById(q.id);
+                            if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                          }}
+                          className={`w-7 h-7 rounded-lg text-xs font-bold transition-all relative flex items-center justify-center ${
+                            isAnswered
+                              ? 'bg-emerald-600 text-white'
+                              : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700'
+                          }`}
+                        >
+                          {q.num}
+                          {isBookmarked && (
+                            <span className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-amber-500 ring-2 ring-white dark:ring-slate-900" />
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
             </div>
 
-            {/* Render Active Section */}
-            {activeExamSection === 'tf' && (
-              <TFSection
-                questions={currentBundle.tf}
-                userAnswers={currentProgress.tf}
-                onSelectAnswer={handleSelectTF}
-                showFeedback={activeTab === 'practice' || currentProgress.submitted}
-                bookmarkedIds={currentProgress.bookmarks}
-                onToggleBookmark={handleToggleBookmark}
-              />
-            )}
-
-            {activeExamSection === 'mcq' && (
+            {/* Render Sections */}
+            {(activeExamSection === 'mcq' || activeExamSection === 'all') && (
               <MCQSection
                 questions={currentBundle.mcq}
                 userAnswers={currentProgress.mcq}
@@ -520,10 +537,11 @@ export function App() {
                 showFeedback={activeTab === 'practice' || currentProgress.submitted}
                 bookmarkedIds={currentProgress.bookmarks}
                 onToggleBookmark={handleToggleBookmark}
+                isExamSubmitted={currentProgress.submitted}
               />
             )}
 
-            {activeExamSection === 'essay' && (
+            {(activeExamSection === 'essay' || activeExamSection === 'all') && (
               <EssaySection
                 questions={currentBundle.essay}
                 userAnswers={currentProgress.essay}
@@ -531,6 +549,19 @@ export function App() {
                 essayScores={currentProgress.essayScores}
                 onUpdateScore={handleUpdateEssayScore}
                 showFeedback={activeTab === 'practice' || currentProgress.submitted}
+                isExamSubmitted={currentProgress.submitted}
+              />
+            )}
+
+            {(activeExamSection === 'tf' || activeExamSection === 'all') && (
+              <TFSection
+                questions={currentBundle.tf}
+                userAnswers={currentProgress.tf}
+                onSelectAnswer={handleSelectTF}
+                showFeedback={activeTab === 'practice' || currentProgress.submitted}
+                bookmarkedIds={currentProgress.bookmarks}
+                onToggleBookmark={handleToggleBookmark}
+                isExamSubmitted={currentProgress.submitted}
               />
             )}
 
